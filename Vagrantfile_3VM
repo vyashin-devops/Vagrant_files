@@ -1,0 +1,33 @@
+Vagrant.configure("2") do |config|
+  config.vm.define "slave1" do |slave1|
+    slave1.vm.box = "centos/7"
+    slave1.vm.hostname = 'slave1.linux.local'
+    
+
+    slave1.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 1
+    end
+  end
+
+  config.vm.define "slave2" do |slave2|
+    slave2.vm.box = "centos/7"
+    slave2.vm.hostname = 'slave2.linux.local'
+    
+
+    slave2.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 2
+    end
+  end
+  
+  config.vm.define "slave3" do |slave3|
+    slave3.vm.box = "ubuntu/bionic64"
+    slave3.vm.hostname = 'slave3.linux.local'
+
+    slave3.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.cpus = 1
+    end
+  end
+end
