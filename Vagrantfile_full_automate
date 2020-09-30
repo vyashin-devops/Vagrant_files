@@ -1,0 +1,60 @@
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "centos/7"
+  
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "4096"
+    vb.cpus = 4
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    echo "##################### UPDATE #####################"
+    yum  -y update
+    echo "##################### Install OpenSSH #####################"
+    yum install -y curl policycoreutils-python openssh-server
+    echo "##################### se-linux DISABLE #####################"
+    setenforce 0
+    echo "##################### sshd start #####################"
+    systemctl enable sshd
+    systemctl start sshd
+    echo "##################### firewall add... #####################"
+    firewall-cmd --permanent --add-service=http
+    firewall-cmd --permanent --add-service=https
+    systemctl reload firewalld
+    echo "##################### postfix install... #####################"
+    yum install -y postfix
+    systemctl enable postfix
+    systemctl start postfix
+    echo "##################### add repos... #####################"
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    subscription-manager repos --enable "rhel-*-optional-rpms" --enable "rhel-*-extras-rpms"  --enable "rhel-ha-for-rhel-*-server-rpms"
+    echo "##################### curl... #####################"
+#    curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ee/script.rpm.sh | sudo bash
+    curl -s https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash
+#    EXTERNAL_URL="https://gitlab.linux.local" yum install -y gitlab-сe
+    EXTERNAL_URL="http://gitlab.linux.local" yum install -y gitlab-ce.x86_64
+  SHELL
+
+  config.vm.provision "shell", inline: <<-SHELL 
+    echo "##################### set_hostname... #####################"
+    hostnamectl set-hostname gitlab.linux.local
+    echo "##################### gitlab reconfigure... #####################"
+    gitlab-ctl reconfigure
+    #echo "##################### addusers... #####################"
+    #useradd admin
+    #usermod -aG wheel admin
+    sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
+    echo "##################### restart sshd... #####################"
+    service sshd restart
+    
+    
+  SHELL
+  config.vm.provision "shell", inline: <<-SHELL  
+    echo "##################### chpasswd... #####################"
+  SHELL
+
+  config.vm.provision 'shell', inline: 'echo "vagrant:111" | chpasswd'
+  #config.vm.provision 'shell', inline: 'echo "admin:111" | chpasswd'
+  config.vm.provision 'shell', inline: 'echo "root:111" | chpasswd' 
+  
+end
